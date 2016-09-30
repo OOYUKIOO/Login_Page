@@ -1,0 +1,7 @@
+import hashlib
+
+hashObj = hashlib.sha1
+
+hashObj.update("foo")
+hashObj.digest()
+hashObj.hexdigest()
