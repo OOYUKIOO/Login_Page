@@ -1,30 +1,37 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 import hashlib
 import csv
+import os
 
 app = Flask(__name__)
 data = dict()
+app.secret_key = os.urandom(32)
+
+def checkSession():
+    if 'usr' in session:
+        return render_template("common.html",t="Logged In",mes="You are successfully logged in as"+session['usr'],p="/logout",m='GET',b="LogOut")
+    return render_template("login.html")
 
 @app.route("/")
 def home():
     readFile()
-    return render_template("login.html")
+    return checkSession()
 
 @app.route("/register", methods=['POST'])
 def register():
     usr = request.form["usr"]
     pw = request.form["pw"]
     if usr == "" or pw == "":
-        return render_template("common.html",t="registration failure",mes="Please Fill out all information.",p="/registerNew",b="Return to Register")
+        return render_template("common.html",t="registration failure",mes="Please Fill out all information.",p="/registerNew",m='POST',b="Back")
     elif usr in data:
-        return render_template("common.html",t="registration failure",mes="Username already exist",p="/",b="Return to Login")
+        return render_template("common.html",t="registration failure",mes="Username already exist",p="/",m='POST',b="Login")
     else:
         hashObj = hashlib.sha1()
         hashObj.update(pw)
         postPw = hashObj.hexdigest()
         writeFile(usr,postPw)
         readFile()
-        return render_template("register_success.html")
+        return render_template("common.html",t="Register Success",mes="Registered successfully!",p="/",m='GET',b="Login")
 
 @app.route("/registerNew", methods=['POST'])
 def registerPage():
@@ -39,11 +46,17 @@ def loginCheck():
     pw = hashObj.hexdigest()
     if usr in data:
         if data[usr] == pw:
-            return render_template("common.html",t="Success",mes="Successfully logged in!",p="/",m="'GET'",b="Return to Login")
+            session['usr'] = usr
+            return render_template("common.html",t="Success",mes="Successfully logged in!",p="/logout",m='GET',b="LogOut")
         else:
-            return render_template("common.html",t="Failed",mes="Incorrect Password!",p="/",m="'GET'",b="Return to Login")
+            return render_template("common.html",t="Failed",mes="Incorrect Password!",p="/",m='GET',b="Back")
     else:
-        return render_template("common.html",t="Failed",mes="Username Doesn't Exist",p="/",m="'GET'",b="Return to Login")
+        return render_template("common.html",t="Failed",mes="Username Doesn't Exist",p="/",m='GET',b="Back")
+
+@app.route("/logout")
+def logout():
+    session.pop('usr')
+    return render_template("common.html",t="Log Out",mes="You have successfully logged out!",p="/",m='GET',b="Login")
 
 def readFile():
     with open('data.csv','r') as csvfile:
