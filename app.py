@@ -1,10 +1,9 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import hashlib
 import csv
 
 app = Flask(__name__)
 data = dict()
-
 
 @app.route("/")
 def home():
@@ -16,9 +15,9 @@ def register():
     usr = request.form["usr"]
     pw = request.form["pw"]
     if usr == "" or pw == "":
-        return "<center>Please fill in all info!</center>"
+        return render_template("common.html",t="registration failure",mes="Please Fill out all information.",p="/registerNew",b="Return to Register")
     elif usr in data:
-        return "<center>Username already exist!</center>"
+        return render_template("common.html",t="registration failure",mes="Username already exist",p="/",b="Return to Login")
     else:
         hashObj = hashlib.sha1()
         hashObj.update(pw)
@@ -40,11 +39,11 @@ def loginCheck():
     pw = hashObj.hexdigest()
     if usr in data:
         if data[usr] == pw:
-            return "<center>Login Success!</center>"
+            return render_template("common.html",t="Success",mes="Successfully logged in!",p="/",m="'GET'",b="Return to Login")
         else:
-            return "<center>Incorrect password!</center>"
+            return render_template("common.html",t="Failed",mes="Incorrect Password!",p="/",m="'GET'",b="Return to Login")
     else:
-        return "<center>User name doesn't exist!</center>"
+        return render_template("common.html",t="Failed",mes="Username Doesn't Exist",p="/",m="'GET'",b="Return to Login")
 
 def readFile():
     with open('data.csv','r') as csvfile:
